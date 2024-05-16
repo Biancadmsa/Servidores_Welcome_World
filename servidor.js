@@ -1,6 +1,7 @@
 const express = require("express");
-const fs = require("fs");
+const fs = require("fs").promises;
 const app = express();
+
 
 app.listen(3002, () => {
   console.log(
@@ -8,56 +9,53 @@ app.listen(3002, () => {
   );
 });
 
+
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/index.html");
 });
 
 // Ruta para crear un archivo a partir de los parámetros de la consulta recibida
-app.get("/crearArchivo", (req, res) => {
-  const { nombre, contenido } = req.query;
-  fs.writeFile(nombre, contenido, (error) => {
-    if (error) {
-      res.status(500).send("Algo salió mal al intentar crear el archivo...");
-    } else {
-      res.send(`El archivo ${nombre} fue creado con éxito!`);
+app.get("/crearArchivo", async (req, res) => {
+    const { nombre, contenido } = req.query;
+    try {
+        await fs.writeFile(nombre, contenido);
+        res.send(`El archivo ${nombre} fue creado con éxito!`);
+    } catch (error) {
+        res.status(500).send("Algo salió mal al intentar crear el archivo...");
     }
-  });
 });
 
 // Ruta para devolver el contenido de un archivo cuyo nombre es declarado en los parámetros de la consulta recibida
-app.get("/leerArchivo", (req, res) => {
+app.get("/leerArchivo", async (req, res) => {
   const { nombre } = req.query;
-  fs.readFile(nombre, (error, data) => {
-    if (error) {
-      res.status(500).send("Algo salió mal...");
-    } else {
-      res.send(data);
-    }
-  });
+  try {
+    const data = await fs.readFile(nombre);
+    res.send(data);
+  } catch (error) {
+    res.status(500).send("Algo salió mal...");
+  }
 });
 
 // Ruta para renombrar un archivo, cuyo nombre y nuevo nombre es declarado en los parámetros de la consulta recibida
-app.get("/renombrarArchivo", (req, res) => {
+app.get("/renombrarArchivo", async (req, res) => {
   const { nombre, nuevoNombre } = req.query;
-  fs.rename(nombre, nuevoNombre, (error) => {
-    if (error) {
-      res.status(500).send("Algo salió mal al intentar renombrar el archivo...");
-    } else {
+  try {
+      await fs.rename(nombre, nuevoNombre);
       res.send(`Archivo ${nombre} renombrado por ${nuevoNombre}`);
-    }
-  });
+  } catch (error) {
+      res.status(500).send("Algo salió mal al intentar renombrar el archivo...");
+  }
 });
 
 // Ruta para eliminar un archivo, cuyo nombre es declarado en los parámetros de la consulta recibida
-app.get("/eliminarArchivo", (req, res) => {
+app.get("/eliminarArchivo", async (req, res) => {
   const { nombre } = req.query;
-  fs.unlink(nombre, (error) => {
-    if (error) {
-      res.status(500).send("Algo salió mal al intentar eliminar el archivo...");
-    } else {
+  try {
+      await fs.unlink(nombre);
       res.send(`Archivo ${nombre} eliminado con éxito`);
-    }
-  });
+  } catch (error) {
+      res.status(500).send("Algo salió mal al intentar eliminar el archivo...");
+  }
 });
 
 app.get("*", (req, res) => {
